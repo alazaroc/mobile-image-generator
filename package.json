@@ -1,0 +1,37 @@
+{
+  "name": "mobile-image-generator",
+  "version": "1.0.0",
+  "description": "CLI tool to wrap app screenshots in a phone mockup frame and convert them to WebP: ready for app store listings and marketing pages",
+  "private": true,
+  "scripts": {
+    "generate": "node scripts/generate-mobile-format.js",
+    "convert:original": "./scripts/convert-images-to-webp.sh --source original",
+    "convert:generated": "./scripts/convert-images-to-webp.sh --source generated",
+    "all": "npm run generate && npm run convert:generated"
+  },
+  "keywords": [
+    "screenshots",
+    "mockup",
+    "phone-frame",
+    "webp",
+    "marketing",
+    "puppeteer",
+    "nodejs",
+    "mobile",
+    "image-generator",
+    "automation"
+  ],
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "puppeteer": "^24.40.0"
+  },
+  "author": "Alejandro Lazaro Chueca",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alazaroc/mobile-image-generator.git"
+  }
+}

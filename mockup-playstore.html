@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mobile Image Generator – Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 32px 24px;
+    gap: 24px;
+  }
+
+  /* ── Exportable card ── */
+  #card {
+    border-radius: 24px;
+    padding: 28px 28px 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 380px;
+    transition: background 0.2s;
+  }
+
+  /* ── Phone frame ── */
+  .phone {
+    width: 280px;
+    height: 560px;
+    background: #1a1a1a;
+    border-radius: 44px;
+    border: 7px solid #2e2e2e;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1.5px #3a3a3a,
+      inset 0 0 0 1px #111,
+      0 32px 64px rgba(0,0,0,0.55);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .phone::before {
+    content: '';
+    position: absolute;
+    right: -11px; top: 100px;
+    width: 5px; height: 60px;
+    background: #2a2a2a; border-radius: 3px;
+    box-shadow: 0 80px 0 #2a2a2a;
+  }
+  .phone::after {
+    content: '';
+    position: absolute;
+    left: -11px; top: 80px;
+    width: 5px; height: 40px;
+    background: #2a2a2a; border-radius: 3px;
+    box-shadow: 0 58px 0 #2a2a2a;
+  }
+  .notch {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 90px; height: 26px;
+    background: #1a1a1a;
+    border-radius: 0 0 18px 18px;
+    z-index: 10;
+  }
+  .screen {
+    width: 100%; height: 100%;
+    background: #222;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .screen img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+  }
+  .placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255,255,255,0.3);
+    font-size: 13px;
+    text-align: center;
+    padding: 24px;
+    pointer-events: none;
+  }
+  .upload-hint {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 20;
+    border-radius: 37px;
+  }
+  .phone:hover .upload-hint { opacity: 1; }
+
+  /* ── Label ── */
+  #label-text {
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    padding: 3px 8px;
+    min-width: 80px;
+    color: #fff;
+    /* dashed border only visible in browser, hidden on export via JS */
+    border-bottom: 2px dashed rgba(255,255,255,0.3);
+  }
+  #label-text:focus { border-bottom-color: rgba(255,255,255,0.6); }
+
+  input[type=file] { display: none; }
+
+  /* ── Controls panel ── */
+  .panel {
+    background: #252525;
+    border-radius: 16px;
+    padding: 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 380px;
+  }
+
+  .panel-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .panel-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+  }
+
+  /* Color swatches */
+  .swatches {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.1s, border-color 0.1s;
+    flex-shrink: 0;
+  }
+  .swatch:hover { transform: scale(1.1); }
+  .swatch.active { border-color: #fff; }
+
+  .custom-color-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #custom-input {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    background: #333;
+    border: 1px solid #444;
+    border-radius: 8px;
+    color: #fff;
+    padding: 6px 10px;
+    width: 110px;
+    outline: none;
+  }
+  #custom-input:focus { border-color: #666; }
+
+  #color-preview {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.15);
+    flex-shrink: 0;
+  }
+
+  /* Label color toggle */
+  .label-color-row {
+    display: flex;
+    gap: 8px;
+  }
+  .label-opt {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: border-color 0.1s;
+  }
+  .label-opt.active { border-color: rgba(255,255,255,0.5); }
+
+  /* Buttons */
+  .actions { display: flex; gap: 10px; }
+
+  button {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 22px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.15s;
+    flex: 1;
+  }
+  button:active { transform: scale(0.97); }
+  .btn-primary { background: #2f7d35; color: #fff; }
+  .btn-primary:hover { background: #3a9641; }
+  .btn-secondary {
+    background: rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.6);
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+  .tip {
+    color: rgba(255,255,255,0.2);
+    font-size: 11px;
+    text-align: center;
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+
+<!-- Exportable card -->
+<div id="card" style="background: #1b3a1d;">
+  <div class="phone" onclick="document.getElementById('file-input').click()">
+    <div class="notch"></div>
+    <div class="screen" id="screen">
+      <div class="placeholder">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
+          <rect x="3" y="3" width="18" height="18" rx="3"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        Click to upload<br>your screenshot
+      </div>
+    </div>
+    <div class="upload-hint">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <polyline points="16 16 12 12 8 16"/>
+        <line x1="12" y1="12" x2="12" y2="21"/>
+        <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+      </svg>
+      Change image
+    </div>
+  </div>
+  <div id="label-text" contenteditable="true" spellcheck="false">Caption</div>
+</div>
+
+<input type="file" id="file-input" accept="image/*" onchange="loadImage(this)">
+
+<!-- Controls -->
+<div class="panel">
+
+  <div class="panel-section">
+    <div class="panel-label">Background color</div>
+    <div class="swatches" id="swatches">
+      <!-- Greens -->
+      <div class="swatch active" data-color="#1b3a1d" style="background:#1b3a1d;" title="Dark green"></div>
+      <div class="swatch" data-color="#2d5a30" style="background:#2d5a30;" title="Mid green"></div>
+      <div class="swatch" data-color="#4a8c4e" style="background:#4a8c4e;" title="Light green"></div>
+      <div class="swatch" data-color="#e8f5e9" style="background:#e8f5e9;" title="Pale green"></div>
+      <!-- Neutrals -->
+      <div class="swatch" data-color="#0d0d0d" style="background:#0d0d0d; border:1px solid #333;" title="Black"></div>
+      <div class="swatch" data-color="#1e1e1e" style="background:#1e1e1e;" title="Dark grey"></div>
+      <div class="swatch" data-color="#2e2e2e" style="background:#2e2e2e;" title="Grey"></div>
+      <div class="swatch" data-color="#f5f5f5" style="background:#f5f5f5;" title="Off-white"></div>
+      <div class="swatch" data-color="#ffffff" style="background:#fff; border:1px solid #ddd;" title="White"></div>
+    </div>
+    <div class="custom-color-wrap">
+      <div id="color-preview" style="background:#1b3a1d;"></div>
+      <input type="text" id="custom-input" placeholder="#hex o nombre" value="#1b3a1d" oninput="applyCustomColor(this.value)">
+    </div>
+  </div>
+
+  <div class="panel-section">
+    <div class="panel-label">Text color</div>
+    <div class="label-color-row">
+      <div class="label-opt active" style="background:#fff; color:#111;" onclick="setLabelColor('#fff', this)">White</div>
+      <div class="label-opt" style="background:#111; color:#fff;" onclick="setLabelColor('#111', this)">Black</div>
+      <div class="label-opt" style="background:#2d5a30; color:#fff;" onclick="setLabelColor('#a8d5ab', this)">Green</div>
+      <div class="label-opt" style="background:#444; color:#eee;" onclick="setLabelColor('#ccc', this)">Grey</div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" onclick="exportImage()">⬇ Download image</button>
+    <button class="btn-secondary" onclick="resetImage()">Reset</button>
+  </div>
+</div>
+
+<p class="tip">The dashed text border disappears in the downloaded image · Exported at 3× resolution</p>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+  var currentBg = '#1b3a1d';
+
+  // Swatch click
+  document.getElementById('swatches').addEventListener('click', function(e) {
+    var sw = e.target.closest('.swatch');
+    if (!sw) return;
+    setBg(sw.dataset.color);
+    document.querySelectorAll('.swatch').forEach(function(s){ s.classList.remove('active'); });
+    sw.classList.add('active');
+    document.getElementById('custom-input').value = sw.dataset.color;
+    document.getElementById('color-preview').style.background = sw.dataset.color;
+  });
+
+  function applyCustomColor(val) {
+    val = val.trim();
+    // Accept hex or css color names
+    var test = document.createElement('div');
+    test.style.color = val;
+    document.body.appendChild(test);
+    var valid = getComputedStyle(test).color !== '';
+    document.body.removeChild(test);
+    if (val.length > 2) {
+      setBg(val);
+      document.getElementById('color-preview').style.background = val;
+      document.querySelectorAll('.swatch').forEach(function(s){ s.classList.remove('active'); });
+    }
+  }
+
+  function setBg(color) {
+    currentBg = color;
+    document.getElementById('card').style.background = color;
+  }
+
+  function setLabelColor(color, el) {
+    document.getElementById('label-text').style.color = color;
+    document.querySelectorAll('.label-opt').forEach(function(o){ o.classList.remove('active'); });
+    el.classList.add('active');
+  }
+
+  function loadImage(input) {
+    var file = input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('screen').innerHTML =
+        '<img src="' + e.target.result + '" alt="screenshot">';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function resetImage() {
+    document.getElementById('screen').innerHTML =
+      '<div class="placeholder"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Click to upload<br>your screenshot</div>';
+    document.getElementById('file-input').value = '';
+  }
+
+  function exportImage() {
+    var label = document.getElementById('label-text');
+    // Hide dashed border for export
+    label.style.borderBottom = 'none';
+
+    var card = document.getElementById('card');
+    html2canvas(card, {
+      backgroundColor: currentBg,
+      scale: 3,
+      useCORS: true,
+      logging: false,
+      allowTaint: true
+    }).then(function(canvas) {
+      // Restore dashed border
+      label.style.borderBottom = '';
+
+      var link = document.createElement('a');
+      var name = label.innerText.trim() || 'screenshot';
+      link.download = 'mockup-' + name.toLowerCase().replace(/\s+/g,'-') + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  }
+</script>
+</body>
+</html>
