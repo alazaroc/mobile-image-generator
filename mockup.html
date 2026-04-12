@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mobile Image Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #111;
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    align-items: stretch;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 28px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .logo svg { opacity: 0.9; }
+  .header-meta {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+  }
+  .header-meta a {
+    color: rgba(255,255,255,0.65);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .header-meta a:hover { color: rgba(255,255,255,0.9); }
+
+  /* ── Main canvas ── */
+  main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    padding: 32px 40px;
+  }
+
+  /* ── Exportable card ── */
+  #card {
+    border-radius: 28px;
+    padding: 28px 24px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    width: 320px;
+    flex-shrink: 0;
+    transition: background 0.25s;
+  }
+
+  /* ── Phone frame ── */
+  .phone {
+    width: 240px;
+    height: 490px;
+    background: #111;
+    border-radius: 46px;
+    border: 7px solid #2a2a2a;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 0 0 1px #333,
+      inset 0 0 0 1px #0a0a0a,
+      0 24px 60px rgba(0,0,0,0.6),
+      0 4px 12px rgba(0,0,0,0.4);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  /* Side buttons */
+  .phone::before {
+    content: '';
+    position: absolute;
+    right: -10px; top: 96px;
+    width: 4px; height: 52px;
+    background: #242424; border-radius: 3px;
+    box-shadow: 0 72px 0 #242424;
+  }
+  .phone::after {
+    content: '';
+    position: absolute;
+    left: -10px; top: 76px;
+    width: 4px; height: 36px;
+    background: #242424; border-radius: 3px;
+    box-shadow: 0 52px 0 #242424;
+  }
+  .notch {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 80px; height: 24px;
+    background: #111;
+    border-radius: 0 0 16px 16px;
+    z-index: 10;
+  }
+  .screen {
+    width: 100%; height: 100%;
+    background: #1a1a1a;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .screen img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+  }
+  .placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: rgba(255,255,255,0.2);
+    font-size: 12px;
+    text-align: center;
+    padding: 24px;
+    pointer-events: none;
+    line-height: 1.5;
+  }
+  .upload-hint {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 20;
+    border-radius: 39px;
+    letter-spacing: 0.01em;
+  }
+  .phone:hover .upload-hint { opacity: 1; }
+
+  /* ── Caption ── */
+  #label-text {
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    outline: none;
+    padding: 4px 10px;
+    min-width: 60px;
+    color: #fff;
+    border-bottom: 1.5px dashed rgba(255,255,255,0.25);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+  #label-text:focus { border-bottom-color: rgba(255,255,255,0.5); }
+
+  input[type=file] { display: none; }
+
+  /* ── Divider ── */
+  .divider {
+    width: 1px;
+    align-self: stretch;
+    background: rgba(255,255,255,0.06);
+    flex-shrink: 0;
+  }
+
+  /* ── Controls ── */
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 280px;
+    flex-shrink: 0;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .control-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+  }
+
+  /* Swatches — exactly 8, one row */
+  .swatches {
+    display: flex;
+    gap: 7px;
+    align-items: center;
+  }
+  .swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.12s, border-color 0.12s;
+    flex-shrink: 0;
+  }
+  .swatch:hover { transform: scale(1.12); }
+  .swatch.active { border-color: rgba(255,255,255,0.8); }
+
+  .color-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #color-preview {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    border: 1px solid rgba(255,255,255,0.12);
+    flex-shrink: 0;
+  }
+  #custom-input {
+    font-family: 'Inter', monospace;
+    font-size: 12px;
+    background: #1c1c1c;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: rgba(255,255,255,0.7);
+    padding: 6px 10px;
+    width: 120px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #custom-input:focus { border-color: rgba(255,255,255,0.3); color: #fff; }
+
+  /* Caption color chips */
+  .chip-row { display: flex; gap: 6px; }
+  .chip {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: border-color 0.12s, opacity 0.12s;
+    opacity: 0.75;
+  }
+  .chip:hover { opacity: 1; }
+  .chip.active { border-color: rgba(255,255,255,0.55); opacity: 1; }
+
+  /* Action buttons */
+  .btn-row { display: flex; gap: 8px; }
+  button {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.15s, opacity 0.15s;
+    flex: 1;
+    letter-spacing: -0.01em;
+  }
+  button:active { transform: scale(0.97); }
+  .btn-primary { background: #22c55e; color: #0a1a10; }
+  .btn-primary:hover { background: #16a34a; }
+  .btn-secondary {
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.45);
+    border: 1px solid rgba(255,255,255,0.09);
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+
+  /* ── Info box ── */
+  .info-box {
+    background: #1a1a1a;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .info-box-title {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+  }
+  .info-links {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .info-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .info-link:hover { color: #fff; }
+  .info-link svg { flex-shrink: 0; opacity: 0.5; }
+  .info-link:hover svg { opacity: 0.9; }
+  .cli-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .cli-line {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.75);
+    background: #111;
+    border-radius: 5px;
+    padding: 4px 8px;
+    line-height: 1.5;
+  }
+  .cli-line span { color: #22c55e; }
+
+  .export-note {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.6;
+  }
+
+  /* ── Footer ── */
+  footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 28px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .footer-left {
+    font-size: 11px;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.6;
+  }
+  .footer-left strong {
+    color: rgba(255,255,255,0.85);
+    font-weight: 600;
+  }
+  .footer-left a {
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .footer-left a:hover { color: #fff; }
+  .footer-right {
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+  }
+  .footer-right a {
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+  .footer-right a:hover { color: #fff; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="5" y="2" width="14" height="20" rx="3"/>
+      <line x1="12" y1="18" x2="12" y2="18.5" stroke-width="2.5"/>
+    </svg>
+    Mobile Image Generator
+  </div>
+  <div class="header-meta">by <a href="https://github.com/alazaroc" target="_blank">@alazaroc</a></div>
+</header>
+
+<main>
+
+  <!-- Left: exportable card -->
+  <div id="card" style="background: #1b3a1d;">
+    <div class="phone" onclick="document.getElementById('file-input').click()">
+      <div class="notch"></div>
+      <div class="screen" id="screen">
+        <div class="placeholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="3"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          Click to upload<br>your screenshot
+        </div>
+      </div>
+      <div class="upload-hint">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+          <polyline points="16 16 12 12 8 16"/>
+          <line x1="12" y1="12" x2="12" y2="21"/>
+          <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+        </svg>
+        Change image
+      </div>
+    </div>
+    <div id="label-text" contenteditable="true" spellcheck="false">Your caption here</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Right: controls -->
+  <div class="controls">
+
+    <div class="control-group">
+      <div class="control-label">Background color</div>
+      <div class="swatches" id="swatches">
+        <div class="swatch active" data-color="#1b3a1d" style="background:#1b3a1d;" title="Dark green"></div>
+        <div class="swatch" data-color="#2d5a30" style="background:#2d5a30;" title="Mid green"></div>
+        <div class="swatch" data-color="#4a8c4e" style="background:#4a8c4e;" title="Light green"></div>
+        <div class="swatch" data-color="#0d0d0d" style="background:#0d0d0d; border:1px solid #333;" title="Black"></div>
+        <div class="swatch" data-color="#1e1e1e" style="background:#1e1e1e;" title="Dark grey"></div>
+        <div class="swatch" data-color="#2e2e2e" style="background:#2e2e2e;" title="Grey"></div>
+        <div class="swatch" data-color="#f5f5f5" style="background:#f5f5f5;" title="Off-white"></div>
+        <div class="swatch" data-color="#ffffff" style="background:#fff; border:1px solid #ddd;" title="White"></div>
+      </div>
+      <div class="color-input-row">
+        <div id="color-preview" style="background:#1b3a1d;"></div>
+        <input type="text" id="custom-input" placeholder="#hex or color name" value="#1b3a1d" oninput="applyCustomColor(this.value)">
+      </div>
+    </div>
+
+    <div class="control-group">
+      <div class="control-label">Caption color</div>
+      <div class="chip-row">
+        <div class="chip active" style="background:#fff; color:#111;" onclick="setLabelColor('#fff', this)">White</div>
+        <div class="chip" style="background:#111; color:#fff; border-color:rgba(255,255,255,0.1);" onclick="setLabelColor('#111', this)">Black</div>
+        <div class="chip" style="background:#22c55e22; color:#22c55e;" onclick="setLabelColor('#22c55e', this)">Green</div>
+        <div class="chip" style="background:#444; color:#ccc;" onclick="setLabelColor('#ccc', this)">Grey</div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <div class="btn-row">
+        <button class="btn-primary" onclick="exportImage()">⬇ Download</button>
+        <button class="btn-secondary" onclick="resetImage()">Reset</button>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <div class="info-box-title">CLI tools</div>
+      <div class="cli-block">
+        <div class="cli-line"><span>npm run generate</span>  # add phone frame</div>
+        <div class="cli-line"><span>npm run convert:generated</span>  # → WebP</div>
+        <div class="cli-line"><span>npm run all</span>  # both in sequence</div>
+      </div>
+      <div class="info-links">
+        <a class="info-link" href="https://github.com/alazaroc/mobile-image-generator" target="_blank">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          github.com/alazaroc/mobile-image-generator
+        </a>
+      </div>
+      <div class="export-note">Exported at 3× resolution · Dashed underline hidden on export</div>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  <div class="footer-left">
+    <strong>Built by Alejandro Lázaro</strong> · Cloud Architect &amp; AWS Community Builder · <a href="https://playingaws.com" target="_blank">playingaws.com</a>
+  </div>
+  <div class="footer-right">
+    <a href="https://github.com/alazaroc/mobile-image-generator" target="_blank">GitHub</a>
+  </div>
+</footer>
+
+<input type="file" id="file-input" accept="image/*" onchange="loadImage(this)">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+  var currentBg = '#1b3a1d';
+
+  document.getElementById('swatches').addEventListener('click', function(e) {
+    var sw = e.target.closest('.swatch');
+    if (!sw) return;
+    setBg(sw.dataset.color);
+    document.querySelectorAll('.swatch').forEach(function(s){ s.classList.remove('active'); });
+    sw.classList.add('active');
+    document.getElementById('custom-input').value = sw.dataset.color;
+    document.getElementById('color-preview').style.background = sw.dataset.color;
+  });
+
+  function applyCustomColor(val) {
+    val = val.trim();
+    if (val.length > 2) {
+      setBg(val);
+      document.getElementById('color-preview').style.background = val;
+      document.querySelectorAll('.swatch').forEach(function(s){ s.classList.remove('active'); });
+    }
+  }
+
+  function setBg(color) {
+    currentBg = color;
+    document.getElementById('card').style.background = color;
+  }
+
+  function setLabelColor(color, el) {
+    document.getElementById('label-text').style.color = color;
+    document.querySelectorAll('.chip').forEach(function(o){ o.classList.remove('active'); });
+    el.classList.add('active');
+  }
+
+  function loadImage(input) {
+    var file = input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('screen').innerHTML =
+        '<img src="' + e.target.result + '" alt="screenshot">';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function resetImage() {
+    document.getElementById('screen').innerHTML =
+      '<div class="placeholder"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Click to upload<br>your screenshot</div>';
+    document.getElementById('file-input').value = '';
+  }
+
+  function exportImage() {
+    var label = document.getElementById('label-text');
+    label.style.borderBottom = 'none';
+    html2canvas(document.getElementById('card'), {
+      backgroundColor: currentBg,
+      scale: 3,
+      useCORS: true,
+      logging: false,
+      allowTaint: true
+    }).then(function(canvas) {
+      label.style.borderBottom = '';
+      var link = document.createElement('a');
+      var name = label.innerText.trim() || 'screenshot';
+      link.download = 'mockup-' + name.toLowerCase().replace(/\s+/g, '-') + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  }
+</script>
+</body>
+</html>
