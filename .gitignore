@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Generated outputs
+images/generated-with-mobile-format/**
+images/converted-to-webp/**
+images/original/**
+
+# Examples — keep these for demo purposes
+!images/original/example/
+!images/original/example/**
+!images/generated-with-mobile-format/example/
+!images/generated-with-mobile-format/example/**
+!images/converted-to-webp/original/
+!images/converted-to-webp/original/example/
+!images/converted-to-webp/original/example/**
+!images/converted-to-webp/generated/
+!images/converted-to-webp/generated/example/
+!images/converted-to-webp/generated/example/**
+
+# macOS
+.DS_Store
