@@ -1,8 +1,17 @@
+<div align="center">
+
 # Mobile Image Generator
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/alazaroc/mobile-image-generator/pulls)
+**App store screenshots, done in seconds.** Wrap your app screenshots in a realistic phone frame and batch-convert images to WebP — ready for store listings and marketing pages.
+
+🌐 [Try the interactive UI](https://alazaroc.github.io/mobile-image-generator/mockup.html)
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Node](https://img.shields.io/badge/node-%E2%89%A518-brightgreen)
+![Platform](https://img.shields.io/badge/platform-CLI%20%2B%20HTML-lightgrey)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+</div>
 
 Two tools in one:
 
