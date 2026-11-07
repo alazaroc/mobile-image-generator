@@ -26,7 +26,7 @@
     "node": ">=18"
   },
   "dependencies": {
-    "puppeteer": "^24.40.0"
+    "puppeteer": "^25.16.0"
   },
   "author": "Alejandro Lazaro Chueca",
   "license": "MIT",
